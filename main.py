@@ -1,3 +1,4 @@
+import argparse
 import os
 
 from dotenv import load_dotenv
@@ -20,13 +21,16 @@ client = genai.Client(api_key=api_key)
 
 
 def main():
-    prompt = (
-        "Why is Boot.dev such a great place to learn "
-        "backend development? Use one paragraph maximum."
-    )
+
+    # init arg parser
+    parser = argparse.ArgumentParser(description="ai-agent")
+    parser.add_argument("prompt_str", type=str, help="Your LLM prompt")
+    args = parser.parse_args()
+
+    # generate LLM response
     response = client.models.generate_content(
         model=MODEL,
-        contents=prompt,
+        contents=args.prompt_str,
     )
 
     # validate response
@@ -36,7 +40,8 @@ def main():
             "the API request failed, try again later."
         )
 
-    print(f"User prompt: {prompt}")
+    # print interaction details
+    print(f"User prompt: {args.prompt_str}")
     print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
     print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
     print(f"Response:\n{response.text}")
