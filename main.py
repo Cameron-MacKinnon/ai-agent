@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 from constants import MODEL
 
@@ -22,15 +23,30 @@ client = genai.Client(api_key=api_key)
 
 def main():
 
-    # init arg parser
+    # init arg parser and parse cmd line args
     parser = argparse.ArgumentParser(description="ai-agent")
-    parser.add_argument("prompt_str", type=str, help="Your LLM prompt")
+    parser.add_argument("user_prompt", type=str, help="Your LLM prompt")
+    parser.add_argument(
+        "--verbose",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Enable verbose output",
+    )
     args = parser.parse_args()
 
+    # create list of messages back <-> forth between user/model
+    messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
+
+    # call model to generate response
+    generate_response(client, messages, args)
+
+
+def generate_response(client, messages, args):
     # generate LLM response
     response = client.models.generate_content(
         model=MODEL,
-        contents=args.prompt_str,
+        contents=messages,
     )
 
     # validate response
@@ -40,10 +56,11 @@ def main():
             "the API request failed, try again later."
         )
 
-    # print interaction details
-    print(f"User prompt: {args.prompt_str}")
-    print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-    print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    # print interaction details (optional verbosity)
+    if args.verbose:
+        print(f"User prompt: {args.user_prompt}")
+        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
     print(f"Response:\n{response.text}")
 
 
