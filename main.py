@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from call_function import available_functions
 from constants import MODEL
+from prompts import system_prompt
 
 # attempt to load env vars from /.env
 load_dotenv()
@@ -47,6 +49,9 @@ def generate_response(client, messages, args):
     response = client.models.generate_content(
         model=MODEL,
         contents=messages,
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt, temperature=0, tools=[available_functions]
+        ),
     )
 
     # validate response
@@ -61,6 +66,9 @@ def generate_response(client, messages, args):
         print(f"User prompt: {args.user_prompt}")
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+    if response.function_calls:
+        for call in response.function_calls:
+            print(f"Calling function: {call.name}({call.args})")
     print(f"Response:\n{response.text}")
 
 
